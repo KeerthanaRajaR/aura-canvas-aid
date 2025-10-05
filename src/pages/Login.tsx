@@ -9,17 +9,39 @@ const Login = () => {
   const [userId, setUserId] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const userIdNum = parseInt(userId);
     
     if (userIdNum >= 1001 && userIdNum <= 1100) {
-      localStorage.setItem("userId", userId);
-      toast({
-        title: "Login Successful",
-        description: "Welcome to HealthCare AI",
-      });
-      navigate("/dashboard");
+      // Verify user exists in CSV
+      try {
+        const response = await fetch('/data/users.csv');
+        const csvText = await response.text();
+        const userExists = csvText.includes(`${userId},`);
+        
+        if (userExists) {
+          localStorage.setItem("userId", userId);
+          toast({
+            title: "Login Successful",
+            description: "Welcome to HealthCare AI",
+          });
+          navigate("/dashboard");
+        } else {
+          toast({
+            title: "User Not Found",
+            description: "User ID not found in database",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error verifying user:', error);
+        toast({
+          title: "Error",
+          description: "Failed to verify user",
+          variant: "destructive",
+        });
+      }
     } else {
       toast({
         title: "Invalid User ID",

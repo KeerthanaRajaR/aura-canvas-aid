@@ -8,10 +8,13 @@ import MoodChart from "@/components/dashboard/MoodChart";
 import FoodLogger from "@/components/dashboard/FoodLogger";
 import MealPlanner from "@/components/dashboard/MealPlanner";
 import HealthProfile from "@/components/dashboard/HealthProfile";
+import AIAssistant from "@/components/dashboard/AIAssistant";
+import { getUserById, type UserData } from "@/utils/userData";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("User");
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [activeTab, setActiveTab] = useState<"dashboard" | "assistant">("dashboard");
 
   useEffect(() => {
@@ -20,7 +23,12 @@ const Dashboard = () => {
       navigate("/");
     } else {
       // Load user data from CSV
-      setUserName("Tanya Ramsey"); // This would come from actual data
+      getUserById(userId).then(user => {
+        if (user) {
+          setUserData(user);
+          setUserName(`${user.first_name} ${user.last_name}`);
+        }
+      });
     }
   }, [navigate]);
 
@@ -91,7 +99,7 @@ const Dashboard = () => {
         {activeTab === "dashboard" ? (
           <div className="space-y-6">
             {/* Stats Cards */}
-            <StatsCards />
+            {userData && <StatsCards userData={userData} />}
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -103,18 +111,13 @@ const Dashboard = () => {
             <FoodLogger />
 
             {/* Meal Planner */}
-            <MealPlanner />
+            {userData && <MealPlanner userData={userData} />}
 
             {/* Health Profile */}
-            <HealthProfile />
+            {userData && <HealthProfile userData={userData} />}
           </div>
         ) : (
-          <div className="bg-card rounded-xl p-6 md:p-8 border border-border min-h-[400px]">
-            <h2 className="text-2xl font-bold mb-4">AI Assistant</h2>
-            <p className="text-muted-foreground">
-              Chat with your AI health assistant (Coming Soon)
-            </p>
-          </div>
+          userData && <AIAssistant userData={userData} />
         )}
       </main>
     </div>

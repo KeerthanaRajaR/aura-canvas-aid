@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
+import { type UserData } from "@/utils/userData";
 
 interface MealPlan {
   meal: string;
@@ -15,7 +16,11 @@ interface MealPlan {
   };
 }
 
-const MealPlanner = () => {
+interface MealPlannerProps {
+  userData: UserData;
+}
+
+const MealPlanner = ({ userData }: MealPlannerProps) => {
   const [mealPlan, setMealPlan] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -63,15 +68,15 @@ const MealPlanner = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm mb-4">
             <div>
               <span className="text-muted-foreground">Diet Type:</span>{" "}
-              <span className="font-semibold">Non-Vegetarian</span>
+              <span className="font-semibold capitalize">{userData.dietary_preference.replace('-', ' ')}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Current Glucose:</span>{" "}
-              <span className="font-semibold">350 mg/dL</span>
+              <span className="font-semibold">{userData.latest_cgm} mg/dL</span>
             </div>
             <div>
               <span className="text-muted-foreground">Current Mood:</span>{" "}
-              <span className="font-semibold">Excited</span>
+              <span className="font-semibold">{userData.mood}</span>
             </div>
           </div>
           <Button 
