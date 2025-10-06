@@ -52,7 +52,7 @@ const FoodLogger = () => {
     } else {
       toast({
         title: "Food Not Found",
-        description: `Nutrition data for "${food}" not available. Try: ${commonFoods.slice(0, 3).join(", ")}`,
+        description: `Nutrition data for "${food}" not available. Try: ${commonFoods.slice(0, 3).join(", ")}, chicken, fish, eggs, vegetables, etc.`,
         variant: "destructive",
       });
     }
@@ -63,10 +63,10 @@ const FoodLogger = () => {
   };
 
   return (
-    <Card className="border-border">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Utensils className="w-5 h-5 text-chart-4" />
+    <Card className="border-border shadow-lg">
+      <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-t-lg">
+        <CardTitle className="flex items-center gap-2 text-xl text-primary">
+          <Utensils className="w-6 h-6 text-secondary" />
           Log Food Intake
         </CardTitle>
       </CardHeader>
@@ -80,10 +80,10 @@ const FoodLogger = () => {
             onKeyPress={(e) => e.key === "Enter" && handleAddFood(foodInput)}
             className="flex-1"
           />
-          <Button 
+          <Button
             onClick={() => handleAddFood(foodInput)}
             size="icon"
-            className="bg-chart-4 hover:bg-chart-4/90 text-white shrink-0"
+            className="bg-primary hover:bg-primary/90 text-white shrink-0 shadow-md"
           >
             <Plus className="w-5 h-5" />
           </Button>
@@ -107,30 +107,30 @@ const FoodLogger = () => {
         </div>
 
         {/* Nutrition Summary */}
-        <Card className="bg-accent-light border-accent">
+        <Card className="bg-gradient-to-br from-primary/10 via-accent-light to-secondary/10 border-primary/20 shadow-md">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="w-4 h-4" />
+            <CardTitle className="flex items-center gap-2 text-base text-primary">
+              <Clock className="w-5 h-5 text-secondary" />
               Today's Nutrition Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className="text-2xl md:text-3xl font-bold text-accent">{Math.round(nutrition.carbs)}g</p>
-                <p className="text-xs text-muted-foreground">Carbs</p>
+              <div className="text-center p-3 rounded-lg bg-card/50">
+                <p className="text-2xl md:text-3xl font-bold text-chart-1">{Math.round(nutrition.carbs)}g</p>
+                <p className="text-xs font-medium text-muted-foreground mt-1">Carbs</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl md:text-3xl font-bold text-accent">{Math.round(nutrition.protein)}g</p>
-                <p className="text-xs text-muted-foreground">Protein</p>
+              <div className="text-center p-3 rounded-lg bg-card/50">
+                <p className="text-2xl md:text-3xl font-bold text-chart-2">{Math.round(nutrition.protein)}g</p>
+                <p className="text-xs font-medium text-muted-foreground mt-1">Protein</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl md:text-3xl font-bold text-accent">{Math.round(nutrition.fat)}g</p>
-                <p className="text-xs text-muted-foreground">Fat</p>
+              <div className="text-center p-3 rounded-lg bg-card/50">
+                <p className="text-2xl md:text-3xl font-bold text-chart-4">{Math.round(nutrition.fat)}g</p>
+                <p className="text-xs font-medium text-muted-foreground mt-1">Fat</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl md:text-3xl font-bold text-accent">{Math.round(nutrition.calories)}</p>
-                <p className="text-xs text-muted-foreground">Calories</p>
+              <div className="text-center p-3 rounded-lg bg-card/50">
+                <p className="text-2xl md:text-3xl font-bold text-chart-5">{Math.round(nutrition.calories)}</p>
+                <p className="text-xs font-medium text-muted-foreground mt-1">Calories</p>
               </div>
             </div>
           </CardContent>
@@ -138,8 +138,8 @@ const FoodLogger = () => {
 
         {/* Logged Foods */}
         <div>
-          <h4 className="font-semibold mb-3 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-accent" />
+          <h4 className="font-semibold mb-3 flex items-center gap-2 text-primary">
+            <Clock className="w-5 h-5 text-secondary" />
             Logged Foods
           </h4>
           {loggedFoods.length === 0 ? (
@@ -150,24 +150,32 @@ const FoodLogger = () => {
           ) : (
             <div className="space-y-2">
               {loggedFoods.map((food, index) => (
-                <Card key={index} className="bg-muted border-border">
+                <Card key={index} className="bg-card border-primary/10 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <h5 className="font-semibold mb-1">{food.nutrition.name}</h5>
+                        <h5 className="font-semibold mb-1 text-primary">{food.nutrition.name}</h5>
                         <p className="text-xs text-muted-foreground mb-2">{food.nutrition.servingSize}</p>
                         <div className="flex flex-wrap gap-3 text-xs">
-                          <span><strong className="text-chart-1">{food.nutrition.carbs}g</strong> Carbs</span>
-                          <span><strong className="text-accent">{food.nutrition.protein}g</strong> Protein</span>
-                          <span><strong className="text-chart-4">{food.nutrition.fat}g</strong> Fat</span>
-                          <span><strong>{food.nutrition.calories}</strong> Cal</span>
+                          <span className="px-2 py-1 rounded-md bg-chart-1/10">
+                            <strong className="text-chart-1">{food.nutrition.carbs}g</strong> Carbs
+                          </span>
+                          <span className="px-2 py-1 rounded-md bg-chart-2/10">
+                            <strong className="text-chart-2">{food.nutrition.protein}g</strong> Protein
+                          </span>
+                          <span className="px-2 py-1 rounded-md bg-chart-4/10">
+                            <strong className="text-chart-4">{food.nutrition.fat}g</strong> Fat
+                          </span>
+                          <span className="px-2 py-1 rounded-md bg-chart-5/10">
+                            <strong className="text-chart-5">{food.nutrition.calories}</strong> Cal
+                          </span>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleRemoveFood(index)}
-                        className="text-destructive hover:text-destructive shrink-0"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
                       >
                         <X className="w-4 h-4" />
                       </Button>
