@@ -102,6 +102,10 @@ def populate_database(conn, data):
     """Inserts the synthetic data into the Users table."""
     cursor = conn.cursor()
     
+    # Clear existing data first to avoid UNIQUE constraint errors
+    cursor.execute("DELETE FROM Users")
+    cursor.execute("DELETE FROM Logs")
+    
     # Prepare data for insertion
     insert_data = [(
         d['user_id'], d['first_name'], d['last_name'], d['city'], 
