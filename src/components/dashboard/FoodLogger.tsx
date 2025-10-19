@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Utensils, Plus, Clock, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getNutritionInfo, type NutritionInfo } from "@/utils/nutritionData";
+import { estimateNutritionInfo, type NutritionInfo } from "@/utils/nutritionData";
 import { toast } from "@/hooks/use-toast";
 
 const commonFoods = ["dosa", "idli", "rice", "dal", "chapati", "sambar", "curry", "yogurt"];
@@ -41,21 +41,13 @@ const FoodLogger = () => {
   const handleAddFood = (food: string) => {
     if (!food) return;
 
-    const nutritionInfo = getNutritionInfo(food);
-    if (nutritionInfo) {
-      setLoggedFoods([...loggedFoods, { name: food, nutrition: nutritionInfo }]);
-      setFoodInput("");
-      toast({
-        title: "Food Added",
-        description: `${nutritionInfo.name} added to your log`,
-      });
-    } else {
-      toast({
-        title: "Food Not Found",
-        description: `Nutrition data for "${food}" not available. Try: ${commonFoods.slice(0, 3).join(", ")}, chicken, fish, eggs, vegetables, etc.`,
-        variant: "destructive",
-      });
-    }
+    const nutritionInfo = estimateNutritionInfo(food);
+    setLoggedFoods([...loggedFoods, { name: food, nutrition: nutritionInfo }]);
+    setFoodInput("");
+    toast({
+      title: "Food Added",
+      description: `${nutritionInfo.name} added to your log`,
+    });
   };
 
   const handleRemoveFood = (index: number) => {

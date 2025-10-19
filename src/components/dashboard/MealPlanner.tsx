@@ -27,28 +27,119 @@ const MealPlanner = ({ userData }: MealPlannerProps) => {
   const generateMealPlan = () => {
     setLoading(true);
     setTimeout(() => {
-      setMealPlan([
-        {
-          meal: "Breakfast",
-          time: "8:00 AM",
-          description: "Scrambled eggs with whole wheat toast and avocado",
-          nutrition: { carbs: "35g", protein: "25g", fat: "18g", calories: 400 },
-        },
-        {
-          meal: "Lunch",
-          time: "1:00 PM",
-          description: "Grilled chicken breast with sweet potato and green beans",
-          nutrition: { carbs: "45g", protein: "35g", fat: "12g", calories: 440 },
-        },
-        {
-          meal: "Dinner",
-          time: "7:00 PM",
-          description: "Baked salmon with quinoa and roasted asparagus",
-          nutrition: { carbs: "42g", protein: "38g", fat: "20g", calories: 500 },
-        },
-      ]);
+      // Generate personalized meal plan based on user data
+      const personalizedMeals = createPersonalizedMealPlan(userData);
+      setMealPlan(personalizedMeals);
       setLoading(false);
     }, 1500);
+  };
+
+  const createPersonalizedMealPlan = (user: UserData): MealPlan[] => {
+    // Base meals that can be customized
+    const baseMeals: MealPlan[] = [
+      {
+        meal: "Breakfast",
+        time: "8:00 AM",
+        description: "",
+        nutrition: { carbs: "0g", protein: "0g", fat: "0g", calories: 0 },
+      },
+      {
+        meal: "Lunch",
+        time: "1:00 PM",
+        description: "",
+        nutrition: { carbs: "0g", protein: "0g", fat: "0g", calories: 0 },
+      },
+      {
+        meal: "Dinner",
+        time: "7:00 PM",
+        description: "",
+        nutrition: { carbs: "0g", protein: "0g", fat: "0g", calories: 0 },
+      },
+    ];
+
+    // Customize based on dietary preference
+    switch (user.dietary_preference) {
+      case "vegetarian":
+        baseMeals[0].description = "Vegetable upma with coconut chutney and sambar";
+        baseMeals[0].nutrition = { carbs: "45g", protein: "12g", fat: "10g", calories: 320 };
+        
+        baseMeals[1].description = "Brown rice with dal, mixed vegetable curry, and cucumber raita";
+        baseMeals[1].nutrition = { carbs: "60g", protein: "18g", fat: "8g", calories: 420 };
+        
+        baseMeals[2].description = "Whole wheat roti with palak paneer and salad";
+        baseMeals[2].nutrition = { carbs: "45g", protein: "20g", fat: "15g", calories: 400 };
+        break;
+        
+      case "non-vegetarian":
+        baseMeals[0].description = "Egg omelette with vegetables and two whole wheat toast slices";
+        baseMeals[0].nutrition = { carbs: "35g", protein: "25g", fat: "18g", calories: 380 };
+        
+        baseMeals[1].description = "Grilled chicken breast with quinoa and steamed broccoli";
+        baseMeals[1].nutrition = { carbs: "40g", protein: "45g", fat: "12g", calories: 450 };
+        
+        baseMeals[2].description = "Fish curry with brown rice and mixed vegetable salad";
+        baseMeals[2].nutrition = { carbs: "50g", protein: "35g", fat: "15g", calories: 480 };
+        break;
+        
+      case "vegan":
+        baseMeals[0].description = "Oatmeal with almond butter, banana slices, and chia seeds";
+        baseMeals[0].nutrition = { carbs: "55g", protein: "15g", fat: "12g", calories: 350 };
+        
+        baseMeals[1].description = "Quinoa bowl with chickpea curry, roasted vegetables, and tahini dressing";
+        baseMeals[1].nutrition = { carbs: "65g", protein: "22g", fat: "15g", calories: 450 };
+        
+        baseMeals[2].description = "Lentil soup with whole grain bread and mixed greens salad";
+        baseMeals[2].nutrition = { carbs: "55g", protein: "20g", fat: "8g", calories: 400 };
+        break;
+        
+      default:
+        baseMeals[0].description = "Scrambled eggs with whole wheat toast and avocado";
+        baseMeals[0].nutrition = { carbs: "35g", protein: "25g", fat: "18g", calories: 400 };
+        
+        baseMeals[1].description = "Grilled chicken breast with sweet potato and green beans";
+        baseMeals[1].nutrition = { carbs: "45g", protein: "35g", fat: "12g", calories: 440 };
+        
+        baseMeals[2].description = "Baked salmon with quinoa and roasted asparagus";
+        baseMeals[2].nutrition = { carbs: "42g", protein: "38g", fat: "20g", calories: 500 };
+    }
+
+    // Adjust based on medical conditions
+    if (user.medical_conditions.toLowerCase().includes("diabetes")) {
+      // Lower carb options for diabetes
+      baseMeals[0].description = baseMeals[0].description.replace("upma", "vegetable poha");
+      baseMeals[0].nutrition = { carbs: "30g", protein: "10g", fat: "8g", calories: 250 };
+      
+      baseMeals[1].description = baseMeals[1].description.replace("brown rice", "cauliflower rice");
+      baseMeals[1].nutrition = { carbs: "25g", protein: "20g", fat: "10g", calories: 300 };
+      
+      baseMeals[2].description = baseMeals[2].description.replace("brown rice", "quinoa");
+      baseMeals[2].nutrition = { carbs: "35g", protein: "25g", fat: "12g", calories: 350 };
+    } else if (user.medical_conditions.toLowerCase().includes("hypertension")) {
+      // Low sodium options for hypertension
+      baseMeals[0].description += " (low sodium)";
+      baseMeals[1].description += " (low sodium)";
+      baseMeals[2].description += " (low sodium)";
+    }
+
+    // Adjust based on current glucose levels
+    const glucoseLevel = parseInt(user.latest_cgm);
+    if (glucoseLevel > 140) {
+      // High glucose - focus on low glycemic foods
+      baseMeals.forEach(meal => {
+        meal.description += " (low glycemic)";
+        // Reduce carbs slightly
+        const carbs = parseInt(meal.nutrition.carbs);
+        meal.nutrition.carbs = `${Math.max(10, carbs - 10)}g`;
+        meal.nutrition.calories = Math.max(200, meal.nutrition.calories - 50);
+      });
+    } else if (glucoseLevel < 70) {
+      // Low glucose - add some quick energy sources
+      baseMeals[0].description += " with dates or honey";
+      baseMeals[0].nutrition.carbs = `${parseInt(baseMeals[0].nutrition.carbs) + 15}g`;
+      baseMeals[0].nutrition.calories += 80;
+    }
+
+    return baseMeals;
   };
 
   return (

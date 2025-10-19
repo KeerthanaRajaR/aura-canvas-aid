@@ -262,6 +262,81 @@ export const getNutritionInfo = (foodName: string): NutritionInfo | null => {
   return nutritionDatabase[normalizedName] || null;
 };
 
+// New function to estimate nutrition for unknown foods
+export const estimateNutritionInfo = (foodName: string): NutritionInfo => {
+  const normalizedName = foodName.toLowerCase().trim();
+  
+  // Check if we have exact match in database
+  const exactMatch = nutritionDatabase[normalizedName];
+  if (exactMatch) {
+    return exactMatch;
+  }
+  
+  // Estimate nutrition based on keywords in food name
+  let carbs = 0;
+  let protein = 0;
+  let fat = 0;
+  let calories = 0;
+  
+  // Simple estimation logic based on food categories
+  if (normalizedName.includes("rice") || normalizedName.includes("bread") || normalizedName.includes("pasta") || normalizedName.includes("noodle")) {
+    carbs = 45;
+    protein = 4;
+    fat = 1;
+    calories = 200;
+  } else if (normalizedName.includes("chicken") || normalizedName.includes("fish") || normalizedName.includes("meat") || normalizedName.includes("turkey") || normalizedName.includes("beef") || normalizedName.includes("pork")) {
+    carbs = 0;
+    protein = 25;
+    fat = 10;
+    calories = 200;
+  } else if (normalizedName.includes("dal") || normalizedName.includes("lentil") || normalizedName.includes("bean") || normalizedName.includes("legume")) {
+    carbs = 30;
+    protein = 12;
+    fat = 1;
+    calories = 150;
+  } else if (normalizedName.includes("vegetable") || normalizedName.includes("veggie") || normalizedName.includes("broccoli") || normalizedName.includes("carrot") || normalizedName.includes("spinach")) {
+    carbs = 10;
+    protein = 2;
+    fat = 0.5;
+    calories = 50;
+  } else if (normalizedName.includes("fruit") || normalizedName.includes("apple") || normalizedName.includes("banana") || normalizedName.includes("orange")) {
+    carbs = 25;
+    protein = 1;
+    fat = 0.5;
+    calories = 100;
+  } else if (normalizedName.includes("milk") || normalizedName.includes("yogurt") || normalizedName.includes("cheese") || normalizedName.includes("paneer")) {
+    carbs = 10;
+    protein = 8;
+    fat = 5;
+    calories = 120;
+  } else if (normalizedName.includes("oil") || normalizedName.includes("butter") || normalizedName.includes("ghee") || normalizedName.includes("cream")) {
+    carbs = 0;
+    protein = 0;
+    fat = 15;
+    calories = 135;
+  } else if (normalizedName.includes("nut") || normalizedName.includes("seed") || normalizedName.includes("avocado")) {
+    carbs = 5;
+    protein = 5;
+    fat = 15;
+    calories = 180;
+  } else {
+    // Generic estimation for unknown foods
+    carbs = 20;
+    protein = 5;
+    fat = 5;
+    calories = 150;
+  }
+  
+  return {
+    name: foodName.charAt(0).toUpperCase() + foodName.slice(1),
+    carbs,
+    protein,
+    fat,
+    calories,
+    servingSize: "1 serving (approximate)"
+  };
+};
+
 export const searchNutrition = (query: string): NutritionInfo[] => {
   const normalizedQuery = query.toLowerCase().trim();
   return Object.values(nutritionDatabase).filter(food =>
