@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { type UserData } from "@/utils/userData";
+import { generateMealPlan } from "@/utils/userData";
 
 interface MealPlan {
   meal: string;
@@ -23,18 +24,37 @@ interface MealPlannerProps {
 const MealPlanner = ({ userData }: MealPlannerProps) => {
   const [mealPlan, setMealPlan] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState(false);
+  const [agentResponse, setAgentResponse] = useState<string>("");
 
-  const generateMealPlan = () => {
+  const handleGenerateMealPlan = async () => {
     setLoading(true);
-    setTimeout(() => {
-      // Generate personalized meal plan based on user data
-      const personalizedMeals = createPersonalizedMealPlan(userData);
-      setMealPlan(personalizedMeals);
+    try {
+      const response = await generateMealPlan(userData.user_id);
+      setAgentResponse(response.agent_response);
+      
+      // Parse the agent response to extract meal plan
+      const parsedMeals = parseAgentMealPlan(response.agent_response);
+      setMealPlan(parsedMeals);
+    } catch (error) {
+      console.error("Error generating meal plan:", error);
+      // Fallback to default meal plan
+      const defaultMeals = createDefaultMealPlan(userData);
+      setMealPlan(defaultMeals);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
-  const createPersonalizedMealPlan = (user: UserData): MealPlan[] => {
+  const parseAgentMealPlan = (response: string): MealPlan[] => {
+    // This is a simplified parser - in a real implementation, 
+    // you would want to parse the markdown table from the agent response
+    const meals: MealPlan[] = [];
+    
+    // Default meals if parsing fails
+    return createDefaultMealPlan(userData);
+  };
+
+  const createDefaultMealPlan = (user: UserData): MealPlan[] => {
     // Base meals that can be customized
     const baseMeals: MealPlan[] = [
       {
@@ -171,7 +191,7 @@ const MealPlanner = ({ userData }: MealPlannerProps) => {
             </div>
           </div>
           <Button 
-            onClick={generateMealPlan} 
+            onClick={handleGenerateMealPlan} 
             disabled={loading}
             className="w-full sm:w-auto bg-primary hover:bg-primary-dark"
           >
@@ -179,6 +199,13 @@ const MealPlanner = ({ userData }: MealPlannerProps) => {
             {loading ? "Generating..." : "Generate Meal Plan"}
           </Button>
         </div>
+
+        {agentResponse && (
+          <div className="bg-muted p-4 rounded-lg">
+            <h4 className="font-semibold mb-2">Agent Response:</h4>
+            <div className="text-sm whitespace-pre-wrap">{agentResponse}</div>
+          </div>
+        )}
 
         {mealPlan.length > 0 && (
           <div>

@@ -8,21 +8,31 @@ import MoodChart from "@/components/dashboard/MoodChart";
 import FoodLogger from "@/components/dashboard/FoodLogger";
 import MealPlanner from "@/components/dashboard/MealPlanner";
 import HealthProfile from "@/components/dashboard/HealthProfile";
-import AIAssistant from "@/components/dashboard/AIAssistant";
+import UnifiedChatbot from "@/components/dashboard/UnifiedChatbot"; // Changed import
 import { getUserById, type UserData } from "@/utils/userData";
+import { healthCheck } from "@/utils/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("User");
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activeTab, setActiveTab] = useState<"dashboard" | "assistant">("dashboard");
+  const [backendStatus, setBackendStatus] = useState<boolean>(false);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
       navigate("/");
     } else {
-      // Load user data from CSV
+      // Check backend status
+      healthCheck().then(status => {
+        setBackendStatus(status);
+        if (!status) {
+          console.warn("Backend is not available, using fallback data");
+        }
+      });
+      
+      // Load user data from backend or CSV
       getUserById(userId).then(user => {
         if (user) {
           setUserData(user);
@@ -50,6 +60,11 @@ const Dashboard = () => {
               <p className="text-xs md:text-sm text-muted-foreground">
                 Welcome back, {userName}
               </p>
+              {!backendStatus && (
+                <p className="text-xs text-yellow-600">
+                  Backend offline - using demo data
+                </p>
+              )}
             </div>
             <Button
               variant="ghost"
@@ -88,7 +103,7 @@ const Dashboard = () => {
               }`}
             >
               <MessageSquare className="w-4 h-4" />
-              <span className="text-sm font-medium">AI Assistant</span>
+              <span className="text-sm font-medium">Health Assistant</span>
             </button>
           </div>
         </div>
@@ -117,7 +132,7 @@ const Dashboard = () => {
             {userData && <HealthProfile userData={userData} />}
           </div>
         ) : (
-          userData && <AIAssistant userData={userData} />
+          userData && <UnifiedChatbot userData={userData} />
         )}
       </main>
     </div>

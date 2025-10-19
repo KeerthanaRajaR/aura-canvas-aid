@@ -19,8 +19,8 @@ BaseModel.model_config = {"protected_namespaces": ()}
 load_dotenv() 
 app = FastAPI()
 
-# Database path
-DATABASE_NAME = 'data.db'
+# Database path - ensure it's in the correct location
+DATABASE_NAME = '../data/data.db'
 
 # Configure CORS (Important for running frontend/backend separately)
 app.add_middleware(
@@ -31,6 +31,81 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Ensure database tables exist on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables on application startup."""
+    initialize_database()
+
+def initialize_database():
+    """Creates the SQLite database tables if they don't exist."""
+    conn = None
+    try:
+        # Ensure we're looking in the right directory
+        db_path = DATABASE_NAME
+        if not os.path.exists(db_path):
+            # Try alternative path
+            db_path = 'data.db'
+            if not os.path.exists(db_path):
+                # Try relative to parent directory
+                db_path = os.path.join('..', 'data', 'data.db')
+        
+        print(f"[INFO] Using database at: {os.path.abspath(db_path)}")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Create Users table (Primary table for personalized data)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Users (
+                user_id TEXT PRIMARY KEY,
+                first_name TEXT,
+                last_name TEXT,
+                city TEXT,
+                dietary_preference TEXT,
+                medical_conditions TEXT,
+                physical_limitations TEXT,
+                latest_cgm INTEGER,
+                mood TEXT
+            )
+        ''')
+        
+        # Create Logs table (For historical data like CGM and Mood, required by agents)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Logs (
+                log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                type TEXT NOT NULL,      -- e.g., 'CGM', 'MOOD', 'FOOD'
+                value_text TEXT,        -- For food description or complex values
+                value_int INTEGER,      -- For CGM reading or mood score (if using numerical scale)
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES Users(user_id)
+            )
+        ''')
+
+        conn.commit()
+        print("[INFO] Database tables initialized successfully.")
+    except sqlite3.Error as e:
+        print(f"[ERROR] Database initialization error: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def get_db_connection():
+    """Get database connection with proper path handling."""
+    # Try multiple possible paths
+    possible_paths = [
+        DATABASE_NAME,  # ../data/data.db
+        'data.db',      # data.db in current directory
+        os.path.join('..', 'data', 'data.db'),  # ../data/data.db
+        os.path.join('data', 'data.db')         # data/data.db
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return sqlite3.connect(path)
+    
+    # If no existing database found, use the first path
+    return sqlite3.connect(possible_paths[0])
 
 # --- 2. DATA LAYER FUNCTIONS (SQLite) ---
 
@@ -43,13 +118,13 @@ def get_user_data_from_db(user_id):
     """
     conn = None
     try:
-        conn = sqlite3.connect(DATABASE_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Select all necessary fields (9 fields exist, we fetch 8 key ones plus user_id)
         cursor.execute(
             """
-            SELECT user_id, first_name, city, dietary_preference, 
+            SELECT user_id, first_name, last_name, city, dietary_preference, 
                    medical_conditions, physical_limitations, latest_cgm, mood 
             FROM Users 
             WHERE user_id = ?
@@ -63,12 +138,13 @@ def get_user_data_from_db(user_id):
             user_data = {
                 'user_id': user_record[0],
                 'first_name': user_record[1],
-                'city': user_record[2],
-                'dietary_preference': user_record[3],
-                'medical_conditions': user_record[4],
-                'physical_limitations': user_record[5], # Index 5
-                'latest_cgm': user_record[6],
-                'mood': user_record[7]
+                'last_name': user_record[2],
+                'city': user_record[3],
+                'dietary_preference': user_record[4],
+                'medical_conditions': user_record[5],
+                'physical_limitations': user_record[6], # Index 6 now
+                'latest_cgm': user_record[7],
+                'mood': user_record[8]
             }
             return user_data
         return {}
@@ -86,7 +162,7 @@ def log_data_to_db(user_id: str, log_type: str, value_text: str = None, value_in
     """
     conn = None
     try:
-        conn = sqlite3.connect(DATABASE_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         # 1. Insert into Logs table
@@ -225,10 +301,15 @@ async def run_agent(request: AgentRequest):
     """
     The main endpoint for handling all agent-based interactions, 
     matching the logic from your original run_demo.py flow.
+    Enhanced to better handle unified chatbot interactions.
     """
     user_id = request.user_id
     intent = request.intent.lower() # Normalize intent for matching
     user_message = request.message
+    
+    # Enhanced intent recognition for chatbot
+    if intent == "auto_detect":
+        intent = auto_detect_intent(user_message)
     
     # 1. Validation/Greeting Intent (Only intent that runs without full user data check)
     if intent == 'validate':
@@ -268,7 +349,6 @@ async def run_agent(request: AgentRequest):
             print(f"[ERROR] Failed to log CGM data: {e}")
             
         return {"agent_response": str(response), "user_data": user_data}
-
 
     # 3. Meal Plan Generation Intent
     elif intent == 'generate_plan':
@@ -312,3 +392,21 @@ async def run_agent(request: AgentRequest):
         return {"agent_response": str(response), "user_data": user_data}
 
     return {"agent_response": "Unknown intent. How can I assist you today?"}
+
+def auto_detect_intent(message: str) -> str:
+    """Automatically detect the intent based on the user message."""
+    lower_message = message.lower()
+    
+    if "glucose" in lower_message or "blood sugar" in lower_message or re.search(r'\b\d+\b', lower_message):
+        return "log_cgm"
+    
+    if any(word in lower_message for word in ["mood", "feel", "happy", "sad", "tired", "excited", "anxious", "stressed"]):
+        return "log_mood"
+    
+    if any(word in lower_message for word in ["eat", "food", "meal", "lunch", "dinner", "breakfast"]):
+        return "log_food"
+    
+    if any(word in lower_message for word in ["plan", "meal plan", "generate", "suggest"]):
+        return "generate_plan"
+    
+    return "general_query"
